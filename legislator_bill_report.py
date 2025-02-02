@@ -161,6 +161,64 @@ class LegislatorReportGenerator:
         return report
 
 
+class BillReportGenerator:
+    def __init__(
+        self,
+        votes: List[VoteDTO],
+        bills: List[BillDTO],
+        vote_results: List[VoteResultDTO],
+        legislators: List[LegislatorDTO],
+    ):
+        self.votes = votes
+        self.vote_results = vote_results
+        self.bills = {b.id: b for b in bills}
+        self.legislators = {l.id: l.name for l in legislators}
+
+    def generate_report(self) -> List[Dict[str, str]]:
+        bill_counts = dict()
+
+        for vote_result in self.vote_results:
+            bill_id = None
+            for vote in self.votes:
+                if vote.id == vote_result.vote_id:
+                    bill_id = vote.bill_id
+                    break
+
+            if bill_id is None:
+                continue
+
+            if bill_id not in bill_counts:
+                bill_counts[bill_id] = {
+                    'supporter_count': 0,
+                    'opposer_count': 0
+                }
+
+            if vote_result.vote_type == 1:
+                bill_counts[bill_id]['supporter_count'] += 1
+            elif vote_result.vote_type == 2:
+                bill_counts[bill_id]['opposer_count'] += 1
+            else:
+                raise IncorrectVoteCode(
+                    f'The voting code `{vote_result.vote_type}` in your file does not match the settings'
+                )
+
+        report = list()
+        for bill_id, counts in bill_counts.items():
+            bill = self.bills[bill_id]
+
+            primary_sponsor = self.legislators.get(bill.sponsor_id, 'Unknown')
+
+            report.append({
+                'id': str(bill_id),
+                'title': bill.title,
+                'supporter_count': str(counts['supporter_count']),
+                'opposer_count': str(counts['opposer_count']),
+                'primary_sponsor': primary_sponsor,
+            })
+
+        return report
+            
+
 class ReportWriter:
     @staticmethod
     def save_to_csv(data: List[Dict[str, str]], filename: str) -> None:
@@ -190,12 +248,28 @@ if __name__ == '__main__':
     votes = reader.read_votes()
     vote_results = reader.read_vote_results()
 
-    report_generator = LegislatorReportGenerator(votes, vote_results, legislators)
-    legislator_report = report_generator.generate_report()
+    leg_report_generator = LegislatorReportGenerator(
+        votes,
+        vote_results,
+        legislators,
+    )
+    legislator_report = leg_report_generator.generate_report()
 
     ReportWriter.save_to_csv(
         data=legislator_report,
         filename='legislators-support-oppose-count.csv'
+    )
+
+    bill_report_generator = BillReportGenerator(
+        votes,
+        bills,
+        vote_results,
+        legislators,
+    )
+    bill_report = bill_report_generator.generate_report()
+    ReportWriter.save_to_csv(
+        data=bill_report,
+        filename='bills.csv'
     )
 
     print('CSV files generated successfully!')
