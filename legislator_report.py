@@ -116,3 +116,46 @@ class CSVReader:
                 int(row['vote_type'])
             ) for row in self._read_csv(self.vote_results_path)
         ]
+
+
+class LegislatorReportGenerator:
+    def __init__(
+        self,
+        votes: List[VoteDTO],
+        vote_results: List[VoteResultDTO],
+        legislators: List[LegislatorDTO]
+    ):
+        self.votes = votes
+        self.vote_results = vote_results
+        self.legislators = {l.id: l.name for l in legislators}
+
+    def generate_report(self) -> List[Dict[str, str]]:
+        legislator_counts = dict()
+
+        for vote_result in self.vote_results:  # O(V)
+            legislator_id = vote_result.legislator_id
+            vote_type = vote_result.vote_type
+
+            if legislator_id not in legislator_counts:
+                legislator_counts[legislator_id] = {
+                    'num_supported_bills': 0,
+                    'num_opposed_bills': 0
+                }
+
+            if vote_type in Config.VOTE_TYPE_MAPPING:
+                key = Config.VOTE_TYPE_MAPPING[vote_type]
+                legislator_counts[legislator_id][key] += 1
+            else:
+                raise IncorrectVoteCode(
+                    f'The voting code `{vote_type}` in your file does not match the settings'
+                )
+
+        report = list()
+        for legislator_id, counts in legislator_counts.items():  # O(L)
+            report.append({
+                'id': legislator_id,
+                'name': self.legislators.get(legislator_id, 'Unknown'),
+                'num_supported_bills': str(counts['num_supported_bills']),
+                'num_opposed_bills': str(counts['num_opposed_bills'])
+            })
+        return report
