@@ -159,3 +159,43 @@ class LegislatorReportGenerator:
                 'num_opposed_bills': str(counts['num_opposed_bills'])
             })
         return report
+
+
+class ReportWriter:
+    @staticmethod
+    def save_to_csv(data: List[Dict[str, str]], filename: str) -> None:
+        if not data:
+            print(f'No data to save in {filename}')
+            return
+
+        output_path = os.path.join(Config.OUTPUT_FOLDER, filename)
+        os.makedirs(Config.OUTPUT_FOLDER, exist_ok=True)
+
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=data[0].keys())
+            writer.writeheader()
+            writer.writerows(data)
+
+
+if __name__ == '__main__':
+    reader = CSVReader(
+        'bills.csv',
+        'legislators.csv',
+        'votes.csv',
+        'vote_results.csv',
+    )
+
+    bills = reader.read_bills()
+    legislators = reader.read_legislators()
+    votes = reader.read_votes()
+    vote_results = reader.read_vote_results()
+
+    report_generator = LegislatorReportGenerator(votes, vote_results, legislators)
+    legislator_report = report_generator.generate_report()
+
+    ReportWriter.save_to_csv(
+        data=legislator_report,
+        filename='legislators-support-oppose-count.csv'
+    )
+
+    print('CSV files generated successfully!')
