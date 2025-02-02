@@ -169,8 +169,8 @@ class BillReportGenerator:
         vote_results: List[VoteResultDTO],
         legislators: List[LegislatorDTO],
     ):
-        self.votes = votes
         self.vote_results = vote_results
+        self.votes = {vote.id: vote.bill_id for vote in votes}
         self.bills = {b.id: b for b in bills}
         self.legislators = {l.id: l.name for l in legislators}
 
@@ -178,12 +178,7 @@ class BillReportGenerator:
         bill_counts = dict()
 
         for vote_result in self.vote_results:
-            bill_id = None
-            for vote in self.votes:
-                if vote.id == vote_result.vote_id:
-                    bill_id = vote.bill_id
-                    break
-
+            bill_id = self.votes.get(vote_result.vote_id)
             if bill_id is None:
                 continue
 
@@ -205,19 +200,17 @@ class BillReportGenerator:
         report = list()
         for bill_id, counts in bill_counts.items():
             bill = self.bills[bill_id]
-
             primary_sponsor = self.legislators.get(bill.sponsor_id, 'Unknown')
 
             report.append({
-                'id': str(bill_id),
+                'id': str(bill.id),
                 'title': bill.title,
                 'supporter_count': str(counts['supporter_count']),
                 'opposer_count': str(counts['opposer_count']),
                 'primary_sponsor': primary_sponsor,
             })
 
-        return report
-            
+        return report            
 
 class ReportWriter:
     @staticmethod
