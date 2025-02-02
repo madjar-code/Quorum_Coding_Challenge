@@ -15,8 +15,8 @@ class IncorrectVoteCode(Exception):
 
 
 class Config:
-    INPUT_FOLDER = 'new_input'
-    OUTPUT_FOLDER = 'new_output'
+    INPUT_FOLDER = 'input'
+    OUTPUT_FOLDER = 'output'
     VOTE_TYPE_MAPPING = {
         1: 'num_supported_bills',
         2: 'num_opposed_bills',
