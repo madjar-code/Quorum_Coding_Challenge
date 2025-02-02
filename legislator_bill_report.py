@@ -71,10 +71,11 @@ class CSVReader:
         votes_filename: str,
         vote_results_filename: str
     ):
-        self.bills_path = os.path.join(Config.INPUT_FOLDER, bills_filename)
-        self.legislators_path = os.path.join(Config.INPUT_FOLDER, legislators_filename)
-        self.votes_path = os.path.join(Config.INPUT_FOLDER, votes_filename)
-        self.vote_results_path = os.path.join(Config.INPUT_FOLDER, vote_results_filename)
+        prefix = Config.INPUT_FOLDER
+        self.bills_path = os.path.join(prefix, bills_filename)
+        self.legislators_path = os.path.join(prefix, legislators_filename)
+        self.votes_path = os.path.join(prefix, votes_filename)
+        self.vote_results_path = os.path.join(prefix, vote_results_filename)
 
     def _read_csv(self, path: str) -> List[Dict[str, str]]:
         try:
@@ -194,7 +195,8 @@ class BillReportGenerator:
                 bill_counts[bill_id]['opposer_count'] += 1
             else:
                 raise IncorrectVoteCode(
-                    f'The voting code `{vote_result.vote_type}` in your file does not match the settings'
+                    f'The voting code `{vote_result.vote_type}` in your'
+                    ' file does not match the settings'
                 )
 
         report = list()
@@ -210,7 +212,8 @@ class BillReportGenerator:
                 'primary_sponsor': primary_sponsor,
             })
 
-        return report            
+        return report
+
 
 class ReportWriter:
     @staticmethod
